@@ -75,10 +75,11 @@ struct MANGOS_DLL_DECL boss_chrono_lord_dejaAI : public ScriptedAI
         // Despawn Time Keeper
         if (pWho->GetTypeId() == TYPEID_UNIT && pWho->GetEntry() == NPC_TIME_KEEPER)
         {
-            if (m_creature->IsWithinDistInMap(pWho, 20.0f))
+            if (pWho->IsWithinDistInMap(m_creature,20.0f))
             {
-                if (DoCastSpellIfCan(pWho, SPELL_BANISH_HELPER) == CAST_OK)
-                    DoScriptText(SAY_BANISH, m_creature);
+                Creature* pTimeKeeper = (Creature*)pWho;
+                pTimeKeeper->ForcedDespawn();
+                DoScriptText(SAY_BANISH, m_creature);
             }
         }
 

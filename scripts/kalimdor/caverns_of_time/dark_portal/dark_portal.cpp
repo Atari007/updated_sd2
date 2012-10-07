@@ -40,6 +40,8 @@ enum
     SPELL_CORRUPT           = 31326,
 };
 
+GUIDList m_lCreatureGUIDList;
+
 struct MANGOS_DLL_DECL npc_medivh_black_morassAI : public ScriptedAI
 {
     npc_medivh_black_morassAI(Creature* pCreature) : ScriptedAI(pCreature)
@@ -56,6 +58,8 @@ struct MANGOS_DLL_DECL npc_medivh_black_morassAI : public ScriptedAI
 
     void JustSummoned(Creature* pSummoned)
     {
+        m_lCreatureGUIDList.push_back(pSummoned->GetObjectGuid());
+
         // The rift trash mobs are summoned by Medivh, so we can control the movement
         if (pSummoned->GetEntry() != NPC_TIME_RIFT && pSummoned->GetEntry() != NPC_COUNCIL_ENFORCER)
         {
@@ -80,6 +84,15 @@ struct MANGOS_DLL_DECL npc_medivh_black_morassAI : public ScriptedAI
             m_pInstance->SetData(TYPE_MEDIVH, FAIL);
 
         DoScriptText(SAY_DEATH, m_creature);
+		for (GUIDList::const_iterator itr = m_lCreatureGUIDList.begin(); itr != m_lCreatureGUIDList.end(); ++itr)
+        {
+            if (Creature* pCreature = m_creature->GetMap()->GetCreature(*itr))
+            {
+                if (pCreature->isAlive())
+                pCreature->ForcedDespawn();
+            }
+        }
+        m_lCreatureGUIDList.clear();
     }
 
     void UpdateAI(const uint32 uiDiff) { }
@@ -244,6 +257,7 @@ struct MANGOS_DLL_DECL npc_time_riftAI : public ScriptedAI
 
     void JustSummoned(Creature* pSummoned)
     {
+        m_lCreatureGUIDList.push_back(pSummoned->GetObjectGuid());
         switch (pSummoned->GetEntry())
         {
             case NPC_CHRONO_LORD_DEJA:
@@ -281,6 +295,7 @@ struct MANGOS_DLL_DECL npc_time_riftAI : public ScriptedAI
 
     void SummonedCreatureJustDied(Creature* pSummoned)
     {
+        m_lCreatureGUIDList.remove(pSummoned->GetObjectGuid());
         switch (pSummoned->GetEntry())
         {
             case NPC_AEONUS:

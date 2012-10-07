@@ -17,14 +17,17 @@
 /* ScriptData
 SDName: Dustwallow_Marsh
 SD%Complete: 95
-SDComment: Quest support: 1173, 1273, 1324, 11209, 11180.
+SDComment: Quest support: 558, 1173, 1273, 1324, 11209, 11126, 11180. Vendor Nat Pagle
 SDCategory: Dustwallow Marsh
 EndScriptData */
 
 /* ContentData
 mobs_risen_husk_spirit
 npc_restless_apparition
+npc_deserter_agitator
+npc_lady_jaina_proudmoore
 npc_morokk
+npc_nat_pagle
 npc_ogron
 npc_private_hendel
 EndContentData */
@@ -177,6 +180,79 @@ CreatureAI* GetAI_npc_restless_apparition(Creature* pCreature)
 }
 
 /*######
+## npc_deserter_agitator
+######*/
+
+enum
+{
+    QUEST_TRAITORS_AMONG_US = 11126,
+    FACTION_THER_DESERTER   = 1883
+};
+
+struct MANGOS_DLL_DECL npc_deserter_agitatorAI : public ScriptedAI
+{
+    npc_deserter_agitatorAI(Creature* pCreature) : ScriptedAI(pCreature) {Reset();}
+
+    void Reset()
+    {
+        m_creature->setFaction(m_creature->GetCreatureInfo()->faction_A);
+    }
+};
+
+CreatureAI* GetAI_npc_deserter_agitator(Creature* pCreature)
+{
+    return new npc_deserter_agitatorAI(pCreature);
+}
+
+bool GossipHello_npc_deserter_agitator(Player* pPlayer, Creature* pCreature)
+{
+    if (pPlayer->GetQuestStatus(QUEST_TRAITORS_AMONG_US) == QUEST_STATUS_INCOMPLETE)
+    {
+        pCreature->setFaction(FACTION_THER_DESERTER);
+        pPlayer->TalkedToCreature(pCreature->GetEntry(), pCreature->GetObjectGuid());
+    }
+    else
+        pPlayer->SEND_GOSSIP_MENU(pPlayer->GetGossipTextId(pCreature), pCreature->GetObjectGuid());
+
+    return true;
+}
+
+/*######
+## npc_lady_jaina_proudmoore
+######*/
+
+enum
+{
+    QUEST_JAINAS_AUTOGRAPH = 558,
+    SPELL_JAINAS_AUTOGRAPH = 23122
+};
+
+#define GOSSIP_ITEM_JAINA "I know this is rather silly but i have a young ward who is a bit shy and would like your autograph."
+
+bool GossipHello_npc_lady_jaina_proudmoore(Player* pPlayer, Creature* pCreature)
+{
+    if (pCreature->isQuestGiver())
+        pPlayer->PrepareQuestMenu(pCreature->GetObjectGuid());
+
+    if (pPlayer->GetQuestStatus(QUEST_JAINAS_AUTOGRAPH) == QUEST_STATUS_INCOMPLETE)
+        pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_JAINA, GOSSIP_SENDER_MAIN, GOSSIP_SENDER_INFO);
+
+    pPlayer->SEND_GOSSIP_MENU(pPlayer->GetGossipTextId(pCreature), pCreature->GetObjectGuid());
+
+    return true;
+}
+
+bool GossipSelect_npc_lady_jaina_proudmoore(Player* pPlayer, Creature* pCreature, uint32 uiSender, uint32 uiAction)
+{
+    if (uiAction == GOSSIP_SENDER_INFO)
+    {
+        pPlayer->SEND_GOSSIP_MENU(7012, pCreature->GetObjectGuid());
+        pPlayer->CastSpell(pPlayer, SPELL_JAINAS_AUTOGRAPH, false);
+    }
+    return true;
+}
+
+/*######
 ## npc_morokk
 ######*/
 
@@ -292,6 +368,38 @@ bool QuestAccept_npc_morokk(Player* pPlayer, Creature* pCreature, const Quest* p
     }
 
     return false;
+}
+/*######
+## npc_nat_pagle
+######*/
+
+enum
+{
+    QUEST_NATS_MEASURING_TAPE = 8227
+};
+
+bool GossipHello_npc_nat_pagle(Player* pPlayer, Creature* pCreature)
+{
+    if (pCreature->isQuestGiver())
+        pPlayer->PrepareQuestMenu(pCreature->GetObjectGuid());
+
+    if (pCreature->isVendor() && pPlayer->GetQuestRewardStatus(QUEST_NATS_MEASURING_TAPE))
+    {
+        pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_VENDOR, GOSSIP_TEXT_BROWSE_GOODS, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_TRADE);
+        pPlayer->SEND_GOSSIP_MENU(7640, pCreature->GetObjectGuid());
+    }
+    else
+        pPlayer->SEND_GOSSIP_MENU(7638, pCreature->GetObjectGuid());
+
+    return true;
+}
+
+bool GossipSelect_npc_nat_pagle(Player* pPlayer, Creature* pCreature, uint32 uiSender, uint32 uiAction)
+{
+    if (uiAction == GOSSIP_ACTION_TRADE)
+        pPlayer->SEND_VENDORLIST(pCreature->GetObjectGuid());
+
+    return true;
 }
 
 /*######
@@ -708,9 +816,27 @@ void AddSC_dustwallow_marsh()
     pNewScript->RegisterSelf();
 
     pNewScript = new Script;
+    pNewScript->Name = "npc_deserter_agitator";
+    pNewScript->GetAI = &GetAI_npc_deserter_agitator;
+    pNewScript->pGossipHello = &GossipHello_npc_deserter_agitator;
+    pNewScript->RegisterSelf();
+
+    pNewScript = new Script;
+    pNewScript->Name = "npc_lady_jaina_proudmoore";
+    pNewScript->pGossipHello = &GossipHello_npc_lady_jaina_proudmoore;
+    pNewScript->pGossipSelect = &GossipSelect_npc_lady_jaina_proudmoore;
+    pNewScript->RegisterSelf();
+
+    pNewScript = new Script;
     pNewScript->Name = "npc_morokk";
     pNewScript->GetAI = &GetAI_npc_morokk;
     pNewScript->pQuestAcceptNPC = &QuestAccept_npc_morokk;
+    pNewScript->RegisterSelf();
+
+    pNewScript = new Script;
+    pNewScript->Name = "npc_nat_pagle";
+    pNewScript->pGossipHello = &GossipHello_npc_nat_pagle;
+    pNewScript->pGossipSelect = &GossipSelect_npc_nat_pagle;
     pNewScript->RegisterSelf();
 
     pNewScript = new Script;

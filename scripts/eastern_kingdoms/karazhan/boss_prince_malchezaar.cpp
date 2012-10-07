@@ -186,7 +186,7 @@ struct MANGOS_DLL_DECL boss_malchezaarAI : public ScriptedAI
     uint32 m_uiAxesTargetSwitchTimer;
     uint32 m_uiInfernalCleanupTimer;
 
-    GuidVector m_vInfernalGuids;
+    GUIDVector m_vInfernalGuids;
     std::vector<InfernalPoint*> m_positions;
 
     ObjectGuid m_aAxeGuid[2];
@@ -255,7 +255,7 @@ struct MANGOS_DLL_DECL boss_malchezaarAI : public ScriptedAI
     void InfernalCleanup()
     {
         // Infernal Cleanup
-        for(GuidVector::const_iterator itr = m_vInfernalGuids.begin(); itr!= m_vInfernalGuids.end(); ++itr)
+        for(GUIDVector::const_iterator itr = m_vInfernalGuids.begin(); itr!= m_vInfernalGuids.end(); ++itr)
         {
             Creature *pInfernal = m_creature->GetMap()->GetCreature(*itr);
             if (pInfernal && pInfernal->isAlive())
@@ -597,37 +597,14 @@ struct MANGOS_DLL_DECL boss_malchezaarAI : public ScriptedAI
         }
 
         if (m_uiPhase==2)
-            DoMeleeAttacksIfReady();
+            DoMeleeAttackIfReady();
         else
             DoMeleeAttackIfReady();
     }
 
-    void DoMeleeAttacksIfReady()
-    {
-        // Check if pTarget is valid
-        if (!m_creature->getVictim())
-            return;
-
-        if (!m_creature->IsNonMeleeSpellCasted(false) && m_creature->CanReachWithMeleeAttack(m_creature->getVictim()))
-        {
-            //Check for base attack
-            if (m_creature->isAttackReady())
-            {
-                m_creature->AttackerStateUpdate(m_creature->getVictim());
-                m_creature->resetAttackTimer();
-            }
-            //Check for offhand attack
-            if (m_creature->isAttackReady(OFF_ATTACK))
-            {
-                m_creature->AttackerStateUpdate(m_creature->getVictim(), OFF_ATTACK);
-                m_creature->resetAttackTimer(OFF_ATTACK);
-            }
-        }
-    }
-
     void Cleanup(Creature *infernal, InfernalPoint *point)
     {
-        for(GuidVector::iterator itr = m_vInfernalGuids.begin(); itr!= m_vInfernalGuids.end(); ++itr)
+        for(GUIDVector::iterator itr = m_vInfernalGuids.begin(); itr!= m_vInfernalGuids.end(); ++itr)
             if (*itr == infernal->GetObjectGuid())
         {
             m_vInfernalGuids.erase(itr);

@@ -25,6 +25,7 @@ EndScriptData */
 mobs_ghoul_flayer
 npc_darrowshire_spirit
 npc_eris_havenfire
+npc_tirion_fordring
 EndContentData */
 
 #include "precompiled.h"
@@ -142,7 +143,7 @@ struct MANGOS_DLL_DECL npc_eris_havenfireAI : public ScriptedAI
     uint8 m_uiSaveCounter;
 
     ObjectGuid m_playerGuid;
-    GuidList m_lSummonedGuidList;
+    GUIDList m_lSummonedGuidList;
 
     void Reset()
     {
@@ -292,7 +293,7 @@ struct MANGOS_DLL_DECL npc_eris_havenfireAI : public ScriptedAI
 
     void DoDespawnSummons(bool bIsEventEnd = false)
     {
-        for (GuidList::const_iterator itr = m_lSummonedGuidList.begin(); itr != m_lSummonedGuidList.end(); ++itr)
+        for (GUIDList::const_iterator itr = m_lSummonedGuidList.begin(); itr != m_lSummonedGuidList.end(); ++itr)
         {
             if (Creature* pTemp = m_creature->GetMap()->GetCreature(*itr))
             {
@@ -363,6 +364,70 @@ bool QuestAccept_npc_eris_havenfire(Player* pPlayer, Creature* pCreature, const 
 
     return true;
 }
+/*######
+## npc_tirion_fordring
+######*/
+
+bool GossipHello_npc_tirion_fordring(Player* pPlayer, Creature* pCreature)
+{
+    if (pCreature->isQuestGiver())
+        pPlayer->PrepareQuestMenu(pCreature->GetObjectGuid());
+
+    if (pPlayer->GetQuestStatus(5742) == QUEST_STATUS_INCOMPLETE && pPlayer->getStandState() == UNIT_STAND_STATE_SIT)
+        pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "I am ready to hear your tale, Tirion.", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
+
+    pPlayer->SEND_GOSSIP_MENU(pPlayer->GetGossipTextId(pCreature), pCreature->GetObjectGuid());
+
+    return true;
+}
+
+bool GossipSelect_npc_tirion_fordring(Player* pPlayer, Creature* pCreature, uint32 uiSender, uint32 uiAction)
+{
+    switch(uiAction)
+    {
+        case GOSSIP_ACTION_INFO_DEF+1:
+            pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "Thank you, Tirion.  What of your identity?", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+            pPlayer->SEND_GOSSIP_MENU(4493, pCreature->GetObjectGuid());
+            break;
+        case GOSSIP_ACTION_INFO_DEF+2:
+            pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "That is terrible.", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+            pPlayer->SEND_GOSSIP_MENU(4494, pCreature->GetObjectGuid());
+            break;
+        case GOSSIP_ACTION_INFO_DEF+3:
+            pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "I will, Tirion.", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4);
+            pPlayer->SEND_GOSSIP_MENU(4495, pCreature->GetObjectGuid());
+            break;
+        case GOSSIP_ACTION_INFO_DEF+4:
+            pPlayer->CLOSE_GOSSIP_MENU();
+            pPlayer->AreaExploredOrEventHappens(5742);
+            break;
+    }
+    return true;
+}
+
+
+/*######
+## npc_augustus_the_touched
+######*/
+
+bool GossipHello_npc_augustus_the_touched(Player* pPlayer, Creature* pCreature)
+{
+    if (pCreature->isQuestGiver())
+        pPlayer->PrepareQuestMenu(pCreature->GetObjectGuid());
+
+    if (pCreature->isVendor() && pPlayer->GetQuestRewardStatus(6164))
+        pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_VENDOR, GOSSIP_TEXT_BROWSE_GOODS, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_TRADE);
+
+    pPlayer->SEND_GOSSIP_MENU(pPlayer->GetGossipTextId(pCreature), pCreature->GetObjectGuid());
+    return true;
+}
+
+bool GossipSelect_npc_augustus_the_touched(Player* pPlayer, Creature* pCreature, uint32 uiSender, uint32 uiAction)
+{
+    if (uiAction == GOSSIP_ACTION_TRADE)
+        pPlayer->SEND_VENDORLIST(pCreature->GetObjectGuid());
+    return true;
+}
 
 void AddSC_eastern_plaguelands()
 {
@@ -384,4 +449,17 @@ void AddSC_eastern_plaguelands()
     pNewScript->GetAI = &GetAI_npc_eris_havenfire;
     pNewScript->pQuestAcceptNPC = &QuestAccept_npc_eris_havenfire;
     pNewScript->RegisterSelf();
+
+    pNewScript = new Script;
+    pNewScript->Name = "npc_tirion_fordring";
+    pNewScript->pGossipHello =  &GossipHello_npc_tirion_fordring;
+    pNewScript->pGossipSelect = &GossipSelect_npc_tirion_fordring;
+    pNewScript->RegisterSelf();
+	
+    pNewScript = new Script;
+    pNewScript->Name = "npc_augustus_the_touched";
+    pNewScript->pGossipHello = &GossipHello_npc_augustus_the_touched;
+    pNewScript->pGossipSelect = &GossipSelect_npc_augustus_the_touched;
+    pNewScript->RegisterSelf();
+
 }

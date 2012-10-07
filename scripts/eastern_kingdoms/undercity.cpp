@@ -23,9 +23,11 @@ EndScriptData */
 
 /* ContentData
 npc_lady_sylvanas_windrunner
+npc_parqual_fintallas
 EndContentData */
 
 #include "precompiled.h"
+#define HIGHBORNE_LOC_Y_NEW         -55.50f
 
 /*######
 ## npc_lady_sylvanas_windrunner
@@ -150,6 +152,93 @@ bool QuestRewarded_npc_lady_sylvanas_windrunner(Player* pPlayer, Creature* pCrea
     return true;
 }
 
+/*######
+## npc_highborne_lamenter
+######*/
+
+
+struct MANGOS_DLL_DECL npc_highborne_lamenterAI : public ScriptedAI
+{
+    npc_highborne_lamenterAI(Creature* pCreature) : ScriptedAI(pCreature) { Reset(); }
+
+    uint32 EventMove_Timer;
+    uint32 EventCast_Timer;
+    bool EventMove;
+    bool EventCast;
+
+    void Reset()
+    {
+        EventMove_Timer = 10000;
+        EventCast_Timer = 17500;
+        EventMove = true;
+        EventCast = true;
+    }
+
+    void UpdateAI(const uint32 diff)
+    {
+        if (EventMove)
+        {
+            if (EventMove_Timer < diff)
+            {
+                m_creature->SetLevitate(true);
+                m_creature->MonsterMoveWithSpeed(m_creature->GetPositionX(),m_creature->GetPositionY(),HIGHBORNE_LOC_Y_NEW,3.f);
+                EventMove = false;
+            }else EventMove_Timer -= diff;
+        }
+        if (EventCast)
+        {
+            if (EventCast_Timer < diff)
+            {
+                DoCastSpellIfCan(m_creature,SPELL_HIGHBORNE_AURA);
+                EventCast = false;
+            }else EventCast_Timer -= diff;
+        }
+    }
+};
+CreatureAI* GetAI_npc_highborne_lamenter(Creature* pCreature)
+{
+    return new npc_highborne_lamenterAI(pCreature);
+}
+
+
+/*######
+## npc_parqual_fintallas
+######*/
+
+#define SPELL_MARK_OF_SHAME 6767
+
+bool GossipHello_npc_parqual_fintallas(Player* pPlayer, Creature* pCreature)
+{
+    if (pCreature->isQuestGiver())
+        pPlayer->PrepareQuestMenu(pCreature->GetObjectGuid());
+
+    if (pPlayer->GetQuestStatus(6628) == QUEST_STATUS_INCOMPLETE && !pPlayer->HasAura(SPELL_MARK_OF_SHAME, EFFECT_INDEX_0))
+    {
+        pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "Gul'dan", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
+        pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "Kel'Thuzad", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
+        pPlayer->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "Ner'zhul", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+2);
+        pPlayer->SEND_GOSSIP_MENU(5822, pCreature->GetObjectGuid());
+    }
+    else
+        pPlayer->SEND_GOSSIP_MENU(5821, pCreature->GetObjectGuid());
+
+    return true;
+}
+
+bool GossipSelect_npc_parqual_fintallas(Player* pPlayer, Creature* pCreature, uint32 uiSender, uint32 uiAction)
+{
+    if (uiAction == GOSSIP_ACTION_INFO_DEF+1)
+    {
+        pPlayer->CLOSE_GOSSIP_MENU();
+        pCreature->CastSpell(pPlayer,SPELL_MARK_OF_SHAME,false);
+    }
+    if (uiAction == GOSSIP_ACTION_INFO_DEF+2)
+    {
+        pPlayer->CLOSE_GOSSIP_MENU();
+        pPlayer->AreaExploredOrEventHappens(6628);
+    }
+    return true;
+}
 void AddSC_undercity()
 {
     Script* pNewScript;
@@ -158,5 +247,16 @@ void AddSC_undercity()
     pNewScript->Name = "npc_lady_sylvanas_windrunner";
     pNewScript->GetAI = &GetAI_npc_lady_sylvanas_windrunner;
     pNewScript->pQuestRewardedNPC = &QuestRewarded_npc_lady_sylvanas_windrunner;
+    pNewScript->RegisterSelf();
+
+	pNewScript = new Script;
+    pNewScript->Name = "npc_highborne_lamenter";
+    pNewScript->GetAI = &GetAI_npc_highborne_lamenter;
+    pNewScript->RegisterSelf();
+
+	pNewScript = new Script;
+    pNewScript->Name = "npc_parqual_fintallas";
+    pNewScript->pGossipHello = &GossipHello_npc_parqual_fintallas;
+    pNewScript->pGossipSelect = &GossipSelect_npc_parqual_fintallas;
     pNewScript->RegisterSelf();
 }

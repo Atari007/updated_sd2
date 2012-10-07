@@ -32,8 +32,10 @@ instance_dark_portal::instance_dark_portal(Map* pMap) : ScriptedInstance(pMap),
     m_uiMedivhYellCount(1),
     m_uiNextPortalTimer(0),
     m_uiCurrentRiftId(0),
+    m_uiBeaconCount(0),
 
-    m_bHasIntroYelled(false)
+    m_bHasIntroYelled(false),
+    m_bBeaconTrigger(true)
 {
     Initialize();
 }
@@ -53,6 +55,9 @@ void instance_dark_portal::DoResetEvent()
     m_uiCurrentRiftId    = 0;
     m_uiNextPortalTimer  = 0;
     m_uiMedivhYellCount  = 1;
+    m_uiBeaconCount      = 0;
+
+    m_bBeaconTrigger     = true;
 }
 
 void instance_dark_portal::UpdateWorldState(bool bEnable)
@@ -73,22 +78,40 @@ void instance_dark_portal::DoHandleAreaTrigger(uint32 uiTriggerId)
 {
     if (uiTriggerId == AREATRIGGER_ENTER)
     {
-        // Yell at instance entrance
-        if (!m_bHasIntroYelled)
+        if (Creature* pSaat = GetSingleCreatureFromStorage(NPC_SAAT))
         {
-            if (Creature* pSaat = GetSingleCreatureFromStorage(NPC_SAAT))
+            if (m_bBeaconTrigger)
+                ++m_uiBeaconCount;
+            
+            // Yell at instance entrance
+            if (!m_bHasIntroYelled)
+            {
                 DoScriptText(SAY_SAAT_WELCOME, pSaat);
-            m_bHasIntroYelled = true;
+                m_bHasIntroYelled = true;
+
+                if (pSaat->GetVisibility() == VISIBILITY_OFF)
+                    pSaat->SetVisibility(VISIBILITY_ON);
+            }
+            if (m_uiBeaconCount > instance->GetPlayers().getSize() && m_bBeaconTrigger)
+                pSaat->SetVisibility(VISIBILITY_OFF);
         }
     }
     else if (uiTriggerId == AREATRIGGER_MEDIVH)
     {
         // Start Dark Portal event
         if (GetData(TYPE_MEDIVH) == NOT_STARTED || GetData(TYPE_MEDIVH) == FAIL)
+        {
             SetData(TYPE_MEDIVH, IN_PROGRESS);
+            m_uiBeaconCount = instance->GetPlayers().getSize();
+            m_bBeaconTrigger = true;
+        }
         // Start Epilogue
         else if (GetData(TYPE_AEONUS) == DONE && GetData(TYPE_MEDIVH) != DONE)
+        {
             SetData(TYPE_MEDIVH, DONE);
+            m_uiBeaconCount = 0;
+            m_bBeaconTrigger = false;
+        }
     }
 }
 
@@ -158,7 +181,9 @@ void instance_dark_portal::SetData(uint32 uiType, uint32 uiData)
                 }
             }
             if (uiData == FAIL)
+            {
                 DoResetEvent();
+            }
             m_auiEncounter[uiType] = uiData;
             break;
         }

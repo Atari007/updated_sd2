@@ -146,6 +146,8 @@ struct MANGOS_DLL_DECL boss_dorotheeAI : public ScriptedAI
     void JustDied(Unit* killer)
     {
         DoScriptText(SAY_DOROTHEE_DEATH, m_creature);
+		//PATCH TO STOP TITO FROM COMING BACK FROM THE DEAD
+        SummonTitoTimer = 0;
 
         if (m_pInstance)
             SummonCroneIfReady(m_pInstance, m_creature);
@@ -1166,6 +1168,7 @@ void boss_julianneAI::DamageTaken(Unit* done_by, uint32 &damage)
                 Romulo->CombatStop(true);
                 Romulo->DeleteThreatList();
                 Romulo->SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
+				Romulo->SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
             }
             return;
         }
@@ -1229,6 +1232,7 @@ void boss_romuloAI::DamageTaken(Unit* done_by, uint32 &damage)
                 Julianne->CombatStop(true);
                 Julianne->DeleteThreatList();
                 Julianne->SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
+				Julianne->SetFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE);
             }
             return;
         }

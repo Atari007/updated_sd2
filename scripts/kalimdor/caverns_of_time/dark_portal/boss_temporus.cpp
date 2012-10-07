@@ -86,8 +86,9 @@ struct MANGOS_DLL_DECL boss_temporusAI : public ScriptedAI
         {
             if (m_creature->IsWithinDistInMap(pWho,20.0f))
             {
-                if (DoCastSpellIfCan(pWho, SPELL_BANISH_HELPER) == CAST_OK)
-                    DoScriptText(SAY_BANISH, m_creature);
+                Creature* pTimeKeeper = (Creature*)pWho;
+                pTimeKeeper->ForcedDespawn();
+                DoScriptText(SAY_BANISH, m_creature);
             }
         }
 

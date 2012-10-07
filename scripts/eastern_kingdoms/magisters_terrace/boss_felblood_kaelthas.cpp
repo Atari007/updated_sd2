@@ -266,8 +266,8 @@ struct MANGOS_DLL_DECL boss_felblood_kaelthasAI : public ScriptedAI, private Dia
         if (pSpell->Id == SPELL_GRAVITY_LAPSE && pTarget->GetTypeId() == TYPEID_PLAYER)
         {
             DoCastSpellIfCan(pTarget, aGravityLapseSpells[m_uiGravityIndex], CAST_TRIGGERED);
+			pTarget->CastSpell(pTarget, SPELL_GRAVITY_LAPSE_DOT, true, 0, 0, m_creature->GetObjectGuid());
             pTarget->CastSpell(pTarget, SPELL_GRAVITY_LAPSE_FLY, true, 0, 0, m_creature->GetObjectGuid());
-            pTarget->CastSpell(pTarget, SPELL_GRAVITY_LAPSE_DOT, true, 0, 0, m_creature->GetObjectGuid());
             ++m_uiGravityIndex;
         }
     }
@@ -275,10 +275,10 @@ struct MANGOS_DLL_DECL boss_felblood_kaelthasAI : public ScriptedAI, private Dia
     // Wrapper to remove Gravity Lapse - this should be removed on aura 44251 expires
     void RemoveGravityLapse()
     {
-        GuidVector vGuids;
+        GUIDVector vGuids;
         m_creature->FillGuidsListFromThreatList(vGuids);
 
-        for (GuidVector::const_iterator itr = vGuids.begin(); itr != vGuids.end(); ++itr)
+        for (GUIDVector::const_iterator itr = vGuids.begin(); itr != vGuids.end(); ++itr)
         {
             Unit* pUnit = m_creature->GetMap()->GetUnit(*itr);
 
